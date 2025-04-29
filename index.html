@@ -340,13 +340,6 @@ document.addEventListener('click', (event) => {
     if (e.key === 'Enter') handleSearch(input.value.trim());
   });
 
-  // Handle search query from URL if present
-  const initialQuery = getQueryFromUrl();
-  if (initialQuery) {
-    input.value = initialQuery;
-    setTimeout(() => handleSearch(initialQuery), 100);  // Pequeno delay
-  }
-
   // Dynamically set the template URL in the opensearch.xml file
   const opensearchLink = document.querySelector('link[rel="search"]');
   if (opensearchLink) {
@@ -122473,7 +122466,13 @@ document.addEventListener('click', (event) => {
     },
   ];
 
-
+  // Handle search query from URL if present
+  const initialQuery = getQueryFromUrl();
+  if (initialQuery) {
+    input.value = initialQuery;
+    handleSearch(initialQuery);
+  }
+  
 </script>
 </body>
 </html>
