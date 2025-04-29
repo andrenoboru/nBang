@@ -96,7 +96,7 @@
       <div>
         <label for="fallbackSearch">Fallback Search Engine:</label>
         <select id="fallbackSearch">
-          <option value="g">Google</option>
+          <option value="gbr">Google</option>
           <option value="ddg">DuckDuckGo</option>
           <option value="b">Bing</option>
           <option value="brave">Brave</option>
@@ -108,28 +108,24 @@
   </div>
 
   <script>
-    // Definição de bangs (unificados, com os personalizados primeiro)
+    // Definição de bangs
     const bangs = [
-      // Bangs personalizados (têm prioridade)
-      { t: "si", u: "https://shopping.inter.co/busca?q={{{s}}}&tab=affiliate", d: "https://shopping.inter.co" },
-      { t: "promobit", u: "https://www.promobit.com.br/busca?q={{{s}}}", d: "https://www.promobit.com.br" },
-      { t: "reddit", u: "https://www.reddit.com/search?q={{{s}}}", d: "https://www.reddit.com" },
-      { t: "maps", u: "https://maps.google.com/maps?q={{{s}}}", d: "https://maps.google.com" },
-      { t: "yt", u: "https://www.youtube.com/results?search_query={{{s}}}", d: "https://www.youtube.com" },
       { t: "abr", u: "https://www.amazon.com.br/s?k={{{s}}}", d: "https://www.amazon.com.br" },
-      { t: "gdrive", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
-      { t: "gbr", u: "https://www.google.com.br/search?q={{{s}}}", d: "https://www.google.com.br" },
-      { t: "lucky", u: "https://duckduckgo.com/?q=%5C{{{s}}}", d: "https://duckduckgo.com" },
       { t: "ai", u: "https://www.duckduckgo.com/?q={{{s}}}&ia=chat&bang=true", d: "https://www.duckduckgo.com" },
-      { t: "chatgpt", u: "https://chat.openai.com/?q={{{s}}}", d: "https://chat.openai.com" },
-      // não funciona { t: "claude", u: "https://claude.ai/search?q={{{s}}}", d: "https://claude.ai" },
-
-      // Bangs padrão
-      { t: "g", u: "https://www.google.com/search?q={{{s}}}", d: "https://www.google.com" },
-      { t: "ddg", u: "https://duckduckgo.com/?q={{{s}}}", d: "https://duckduckgo.com" },
       { t: "b", u: "https://www.bing.com/search?q={{{s}}}", d: "https://www.bing.com" },
       { t: "brave", u: "https://search.brave.com/search?q={{{s}}}", d: "https://search.brave.com" },
-      { t: "y", u: "https://search.yahoo.com/search?p={{{s}}}", d: "https://yahoo.com" }
+      { t: "chatgpt", u: "https://chat.openai.com/?q={{{s}}}", d: "https://chat.openai.com" },
+      { t: "claude", u: "https://claude.ai/search?q={{{s}}}", d: "https://claude.ai" },
+      { t: "ddg", u: "https://duckduckgo.com/?q={{{s}}}", d: "https://duckduckgo.com" },
+      { t: "gbr", u: "https://www.google.com.br/search?q={{{s}}}", d: "https://www.google.com.br" },
+      { t: "gdrive", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
+      { t: "lucky", u: "https://duckduckgo.com/?q=%5C{{{s}}}", d: "https://duckduckgo.com" },
+      { t: "maps", u: "https://maps.google.com/maps?q={{{s}}}", d: "https://maps.google.com" },
+      { t: "promobit", u: "https://www.promobit.com.br/busca?q={{{s}}}", d: "https://www.promobit.com.br" },
+      { t: "reddit", u: "https://www.reddit.com/search?q={{{s}}}", d: "https://www.reddit.com" },
+      { t: "si", u: "https://shopping.inter.co/busca?q={{{s}}}&tab=affiliate", d: "https://shopping.inter.co" },
+      { t: "y", u: "https://search.yahoo.com/search?p={{{s}}}", d: "https://yahoo.com" },
+      { t: "yt", u: "https://www.youtube.com/results?search_query={{{s}}}", d: "https://www.youtube.com" },
     ];
 
     // Inicialização
@@ -230,6 +226,49 @@
       searchInput.value = '';
       searchInput.focus();
     };
+
+    // Supondo que você já tenha a lista de bangs carregada em uma variável chamada "bangs"
+    const input = document.getElementById('searchInput');
+
+    // Crie um elemento para mostrar o preview
+    const previewBox = document.createElement('div');
+    previewBox.id = 'bangPreview';
+    previewBox.style.position = 'absolute';
+    previewBox.style.top = '100%';
+    previewBox.style.left = '0';
+    previewBox.style.width = '100%';
+    previewBox.style.background = '#333333';
+    previewBox.style.border = '1px solid #ccc';
+    previewBox.style.zIndex = '1000';
+    previewBox.style.display = 'none';
+    previewBox.style.maxHeight = '200px';
+    previewBox.style.overflowY = 'auto';
+    input.parentNode.appendChild(previewBox);
+
+    input.addEventListener('input', function() {
+      const value = input.value.trim();
+      if (value.startsWith('!')) {
+        const query = value.slice(1).toLowerCase();
+        // Filtra os bangs que começam com o texto digitado após "!"
+        const matches = bangs.filter(b => b.t.startsWith(query));
+        if (matches.length > 0) {
+          previewBox.innerHTML = matches.map(b => 
+            `<div style="padding: 8px; cursor: pointer;" onclick="document.getElementById('searchInput').value='!${b.t} ';document.getElementById('bangPreview').style.display='none';">${b.t} — ${b.d}</div>`
+          ).join('');
+          previewBox.style.display = 'block';
+        } else {
+          previewBox.style.display = 'none';
+        }
+      } else {
+        previewBox.style.display = 'none';
+      }
+    });
+
+    // Esconde o preview ao perder o foco
+    input.addEventListener('blur', function() {
+      setTimeout(() => { previewBox.style.display = 'none'; }, 200);
+    });
+
 
     // Lidar com clique no botão de busca
     searchBtn.addEventListener('click', () => handleSearch(searchInput.value.trim()));
