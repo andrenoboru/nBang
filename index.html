@@ -344,7 +344,7 @@ document.addEventListener('click', (event) => {
   const initialQuery = getQueryFromUrl();
   if (initialQuery) {
     input.value = initialQuery;
-    setTimeout(() => handleSearch(initialQuery), 100);  // Pequeno delay
+    handleSearch(initialQuery);
   }
 
   // Dynamically set the template URL in the opensearch.xml file
