@@ -85,14 +85,10 @@
 </head>
 <body>
   <div class="search-container">
-    <input id="searchInput" class="search-input" type="text" placeholder="Type your query..." />
+    <input id="searchInput" class="search-input" type="text" placeholder="Type your search query or !bang search" />
     <button id="searchBtn" class="search-button">Search</button>
     <button id="optionsBtn" class="options-button">Options</button>
     <div id="optionsMenu" class="options-menu">
-      <label>
-        <input type="checkbox" id="includeBang" />
-        Include "!" in search
-      </label>
       <div>
         <label for="fallbackSearch">Fallback Search Engine:</label>
         <select id="fallbackSearch">
@@ -119,8 +115,7 @@
       { t: "ddg", u: "https://duckduckgo.com/?q={{{s}}}", d: "https://duckduckgo.com" },
       { t: "gbr", u: "https://www.google.com.br/search?q={{{s}}}", d: "https://www.google.com.br" },
       { t: "gdrive", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
-      { t: "jira", u: "https://icasei.atlassian.net/browse/{{{s}}}", d: "https://home.atlassian.com" },
-      { t: "lucky", u: "https://lucky.surf/{{{s}}}", d: "https://lucky.surf/" },
+      { t: "lucky", u: "https://www.google.com.br/search?q={{{s}}}&btnI", d: "https://www.google.com.br" },
       { t: "maps", u: "https://maps.google.com/maps?q={{{s}}}", d: "https://maps.google.com" },
       { t: "promobit", u: "https://www.promobit.com.br/busca?q={{{s}}}", d: "https://www.promobit.com.br" },
       { t: "reddit", u: "https://www.reddit.com/search?q={{{s}}}", d: "https://www.reddit.com" },
@@ -135,20 +130,13 @@
     const searchBtn = document.getElementById('searchBtn');
     const optionsBtn = document.getElementById('optionsBtn');
     const optionsMenu = document.getElementById('optionsMenu');
-    const includeBang = document.getElementById('includeBang');
     const fallbackSearch = document.getElementById('fallbackSearch');
     const resetButton = document.getElementById('resetButton');
 
     // Definir valor do dropdown a partir do localStorage
     fallbackSearch.value = fallbackEngine;
 
-    // Definir o valor do checkbox a partir do localStorage
-    if (localStorage.getItem('includeBang') === 'true') {
-      includeBang.checked = true;
-      searchInput.value = '!';
-    }
-
-    // Tratar a busca
+    // Função de busca
     function handleSearch(query) {
       if (!query) return;
 
@@ -164,7 +152,7 @@
 
       const bangCode = match[1].toLowerCase();
       const cleanQuery = query.replace(/!\S+\s*/i, '').trim();
-      
+
       // Verificar se o bang existe
       const selectedBang = bangs.find(b => b.t === bangCode);
       if (selectedBang) {
@@ -176,7 +164,7 @@
         }
         return;
       }
-      
+
       // Se o bang não for reconhecido, usa o motor de busca fallback
       const fallbackBang = bangs.find(b => b.t === fallbackEngine);
       if (fallbackBang) {
@@ -207,31 +195,17 @@
       localStorage.setItem('fallbackSearchEngine', fallbackEngine);
     };
 
-    // Incluir ou remover "!" no início da busca
-    includeBang.onchange = function() {
-      localStorage.setItem('includeBang', this.checked);
-      if (this.checked) {
-        searchInput.value = searchInput.value.startsWith('!') ? searchInput.value : '!' + searchInput.value;
-      } else {
-        searchInput.value = searchInput.value.replace(/^!/, '');
-      }
-      searchInput.focus();
-    };
-
     // Resetar para configurações padrão
     resetButton.onclick = function() {
       localStorage.clear();
-      includeBang.checked = false;
       fallbackSearch.value = 'ddg';
       fallbackEngine = 'ddg';
       searchInput.value = '';
       searchInput.focus();
     };
 
-    // Supondo que você já tenha a lista de bangs carregada em uma variável chamada "bangs"
+    // Preview de sugestões
     const input = document.getElementById('searchInput');
-
-    // Crie um elemento para mostrar o preview
     const previewBox = document.createElement('div');
     previewBox.id = 'bangPreview';
     previewBox.style.position = 'absolute';
@@ -246,16 +220,17 @@
     previewBox.style.overflowY = 'auto';
     input.parentNode.appendChild(previewBox);
 
+    let highlightedIndex = -1;
+    let currentMatches = [];
+
     input.addEventListener('input', function() {
       const value = input.value.trim();
       if (value.startsWith('!')) {
         const query = value.slice(1).toLowerCase();
-        // Filtra os bangs que começam com o texto digitado após "!"
-        const matches = bangs.filter(b => b.t.startsWith(query));
-        if (matches.length > 0) {
-          previewBox.innerHTML = matches.map(b => 
-            `<div style="padding: 8px; cursor: pointer;" onclick="document.getElementById('searchInput').value='!${b.t} ';document.getElementById('bangPreview').style.display='none';">${b.t} — ${b.d}</div>`
-          ).join('');
+        currentMatches = bangs.filter(b => b.t.startsWith(query));
+        highlightedIndex = -1; // Reset ao digitar
+        if (currentMatches.length > 0) {
+          renderPreview();
           previewBox.style.display = 'block';
         } else {
           previewBox.style.display = 'none';
@@ -265,19 +240,50 @@
       }
     });
 
+    function renderPreview() {
+      previewBox.innerHTML = currentMatches.map((b, i) =>
+        `<div style="padding: 8px; cursor: pointer; background:${i === highlightedIndex ? '#555' : 'none'}"
+          class="${i === highlightedIndex ? 'highlighted' : ''}"
+          data-index="${i}"
+          onclick="document.getElementById('searchInput').value='!${b.t} ';document.getElementById('bangPreview').style.display='none';">!${b.t} — ${b.d}</div>`
+      ).join('');
+    }
+
     // Esconde o preview ao perder o foco
     input.addEventListener('blur', function() {
       setTimeout(() => { previewBox.style.display = 'none'; }, 200);
     });
 
-
-    // Lidar com clique no botão de busca
-    searchBtn.addEventListener('click', () => handleSearch(searchInput.value.trim()));
-    
-    // Lidar com tecla Enter no campo de busca
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleSearch(searchInput.value.trim());
+    // Listener ÚNICO para navegação, seleção e busca
+    input.addEventListener('keydown', function(e) {
+      if (previewBox.style.display === 'block' && currentMatches.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex + 1) % currentMatches.length;
+          renderPreview();
+          return;
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex - 1 + currentMatches.length) % currentMatches.length;
+          renderPreview();
+          return;
+        } else if (e.key === 'Tab' || e.key === 'Enter') {
+          if (highlightedIndex >= 0) {
+            e.preventDefault();
+            input.value = '!' + currentMatches[highlightedIndex].t + ' ';
+            previewBox.style.display = 'none';
+            return; // Não ativa a busca!
+          }
+        }
+      }
+      // Só ativa a busca se o preview não está aberto ou não há sugestão destacada
+      if (e.key === 'Enter') {
+        handleSearch(input.value.trim());
+      }
     });
+
+    // Clique no botão de busca
+    searchBtn.addEventListener('click', () => handleSearch(searchInput.value.trim()));
 
     // Lidar com parâmetros de URL
     const urlParams = new URLSearchParams(window.location.search);
