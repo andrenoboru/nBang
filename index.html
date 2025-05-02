@@ -15,9 +15,10 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      background-color: #333333;
-      color: #ffffff;
+      background-color: #2a2a35;
+      color: #e8e8e8;
     }
+    
     .search-container {
       display: flex;
       gap: 8px;
@@ -26,54 +27,76 @@
       border-radius: 8px;
       position: relative;
     }
+    
     .search-input {
       padding: 8px;
       width: 500px;
       font-size: 16px;
-      border: 1px solid #ccc;
+      border: 1px solid #555;
       border-radius: 4px;
+      background-color: #3a3a45;
+      color: #e8e8e8;
     }
-    .search-button, .options-button {
+    
+    .search-button {
       padding: 8px 16px;
       font-size: 16px;
       cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: #f0f0f0;
-    }
-    .search-button:hover, .options-button:hover {
-      background-color: #e0e0e0;
-    }
-    .options-menu {
-      display: none;
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background-color: #444444;
-      color: #ffffff;
       border: 1px solid #555;
       border-radius: 4px;
-      padding: 8px;
-      z-index: 10;
+      background-color: #4a4a55;
+      color: #e8e8e8;
+      transition: background-color 0.2s;
     }
-    .options-menu label {
-      display: block;
-      margin-bottom: 5px;
+    
+    .search-button:hover {
+      background-color: #5a5a65;
     }
-    .reset-button {
-      margin-top: 8px;
-      padding: 8px;
+    
+    .bang-preview {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background: #3a3a45;
+      border: 1px solid #555;
+      border-radius: 0 0 4px 4px;
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .preview-item {
+      padding: 8px 12px;
       cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: #f0f0f0;
+      transition: background-color 0.2s;
+      line-height: 1.4;
     }
+    
+    .preview-item strong {
+      color: #ffffff;
+      font-weight: bold;
+    }
+    
+    .preview-item:hover, .preview-item.highlighted {
+      background-color: #4a4a55;
+    }
+    
+    .domain-name {
+      color: #9a9aa5;
+      font-size: 0.9em;
+    }
+    
     @media only screen and (max-width: 600px) {
       .search-container {
         flex-direction: column;
         padding: 10px;
         max-width: 85%;
+        width: 100%;
       }
+      
       .search-input, .search-button {
         width: 100%;
         padding: 10px;
@@ -87,55 +110,45 @@
   <div class="search-container">
     <input id="searchInput" class="search-input" type="text" placeholder="Type your search query or !bang search" />
     <button id="searchBtn" class="search-button">Search</button>
-    <button id="optionsBtn" class="options-button">Options</button>
-    <div id="optionsMenu" class="options-menu">
-      <div>
-        <label for="fallbackSearch">Fallback Search Engine:</label>
-        <select id="fallbackSearch">
-          <option value="g">Google</option>
-          <option value="d">DuckDuckGo</option>
-          <option value="b">Bing</option>
-          <option value="brave">Brave</option>
-        </select>
-      </div>
-      <button id="resetButton" class="reset-button">Reset to Default</button>
-    </div>
+    <div id="bangPreview" class="bang-preview"></div>
   </div>
 
   <script>
-    // Definição de bangs
+    // Função global para selecionar um bang pelo clique
+    function selectBang(element) {
+      const trigger = element.getAttribute('data-trigger');
+      document.getElementById('searchInput').value = '!' + trigger + ' ';
+      document.getElementById('bangPreview').style.display = 'none';
+      document.getElementById('searchInput').focus();
+    }
+    
+    // Definição de bangs com múltiplos triggers
     const bangs = [
-      { t: "a", u: "https://www.amazon.com.br/s?k={{{s}}}", d: "https://www.amazon.com.br" },
-      { t: "ai", u: "https://www.duckduckgo.com/?q={{{s}}}&ia=chat&bang=true", d: "https://www.duckduckgo.com" },
-      { t: "b", u: "https://www.bing.com/search?q={{{s}}}", d: "https://www.bing.com" },
-      { t: "brave", u: "https://search.brave.com/search?q={{{s}}}", d: "https://search.brave.com" },
-      { t: "claude", u: "https://claude.ai/search?q={{{s}}}", d: "https://claude.ai" },
-      { t: "d", u: "https://duckduckgo.com/?q={{{s}}}", d: "https://duckduckgo.com" },
-      { t: "g", u: "https://www.google.com.br/search?q={{{s}}}", d: "https://www.google.com.br" },
-      { t: "gd", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
-      { t: "i", u: "https://shopping.inter.co/busca?q={{{s}}}&tab=affiliate", d: "https://shopping.inter.co" },
-      { t: "ig", u: "https://www.instagram.com/explore/search/keyword/?q={{{s}}}", d: "https://www.instagram.com" },
-      { t: "j", u: "https://icasei.atlassian.net/browse/{{{s}}}", d: "https://home.atlassian.com" },
-      { t: "l", u: "https://lucky.surf/{{{s}}}", d: "https://lucky.surf" },
-      { t: "m", u: "https://maps.google.com/maps?q={{{s}}}", d: "https://maps.google.com" },
-      { t: "o", u: "https://chat.openai.com/?q={{{s}}}", d: "https://chat.openai.com" },
-      { t: "p", u: "https://www.promobit.com.br/busca?q={{{s}}}", d: "https://www.promobit.com.br" },
-      { t: "pp", u: "https://www.perplexity.ai/search?q={{{s}}}", d: "https://www.perplexity.ai" },
-      { t: "r", u: "https://www.reddit.com/search?q={{{s}}}", d: "https://www.reddit.com" },
-      { t: "y", u: "https://www.youtube.com/results?search_query={{{s}}}", d: "https://www.youtube.com" },
+      { t: ["a", "amazon", "amazonbr"], u: "https://amazon.com.br/s?k={{{s}}}", d: "amazon.com.br" },
+      { t: ["ai"], u: "https://duckduckgo.com/?q={{{s}}}&ia=chat&bang=true", d: "duckduckgo.com" },
+      { t: ["b", "bing"], u: "https://bing.com/search?q={{{s}}}", d: "bing.com" },
+      { t: ["c", "claude"], u: "https://claude.ai/search?q={{{s}}}", d: "claude.ai" },
+      { t: ["d", "ddg", "duckduckgo"], u: "https://duckduckgo.com/?q={{{s}}}", d: "duckduckgo.com" },
+      { t: ["g", "gbr", "google"], u: "https://google.com.br/search?q={{{s}}}", d: "google.com.br" },
+      { t: ["gd","gdrive", "drive"], u: "https://drive.google.com/drive/search?q={{{s}}}", d: "drive.google.com" },
+      { t: ["i", "inter"], u: "https://shopping.inter.co/busca?q={{{s}}}&tab=affiliate", d: "shopping.inter.co" },
+      { t: ["ig", "instagram"], u: "https://instagram.com/explore/search/tags/?q={{{s}}}", d: "instagram.com" },
+      { t: ["j","jira"], u: "https://icasei.atlassian.net/browse/{{{s}}}", d: "icasei.atlassian.net" },
+      { t: ["l","lucky"], u: "https://lucky.surf/{{{s}}}", d: "lucky.surf" },
+      { t: ["m","maps"], u: "https://maps.google.com/maps?q={{{s}}}", d: "maps.google.com" },
+      { t: ["o","chatgpt"], u: "https://chat.openai.com/?q={{{s}}}", d: "chat.openai.com" },
+      { t: ["p", "pp"], u: "https://perplexity.ai/search?q={{{s}}}", d: "perplexity.ai" },
+      { t: ["pb", "promo"], u: "https://promobit.com.br/busca?q={{{s}}}", d: "promobit.com.br" },
+      { t: ["r","reddit"], u: "https://reddit.com/search?q={{{s}}}", d: "reddit.com" },
+      { t: ["y","yt", "youtube"], u: "https://youtube.com/results?search_query={{{s}}}", d: "youtube.com" },
     ];
 
-    // Inicialização
-    let fallbackEngine = localStorage.getItem('fallbackSearchEngine') || 'ddg';
+    // Bing como fallback
+    const fallbackEngine = 'b';
+    
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
-    const optionsBtn = document.getElementById('optionsBtn');
-    const optionsMenu = document.getElementById('optionsMenu');
-    const fallbackSearch = document.getElementById('fallbackSearch');
-    const resetButton = document.getElementById('resetButton');
-
-    // Definir valor do dropdown a partir do localStorage
-    fallbackSearch.value = fallbackEngine;
+    const previewBox = document.getElementById('bangPreview');
 
     // Função de busca
     function handleSearch(query) {
@@ -143,8 +156,8 @@
 
       const match = query.match(/!(\S+)/i);
       if (!match) {
-        // Sem bang, usa o motor de busca fallback
-        const fallbackBang = bangs.find(b => b.t === fallbackEngine);
+        // Sem bang, usa o Bing como fallback
+        const fallbackBang = findBangByTrigger(fallbackEngine);
         if (fallbackBang) {
           window.location.replace(fallbackBang.u.replace('{{{s}}}', encodeURIComponent(query)));
         }
@@ -155,22 +168,27 @@
       const cleanQuery = query.replace(/!\S+\s*/i, '').trim();
 
       // Verificar se o bang existe
-      const selectedBang = bangs.find(b => b.t === bangCode);
+      const selectedBang = findBangByTrigger(bangCode);
       if (selectedBang) {
         // Se a consulta estiver vazia, redireciona para a homepage
         if (cleanQuery === '') {
-          window.location.replace(selectedBang.d);
+          window.location.replace("https://" + selectedBang.d);
         } else {
           window.location.replace(selectedBang.u.replace('{{{s}}}', encodeURIComponent(cleanQuery).replace(/%2F/g, '/')));
         }
         return;
       }
 
-      // Se o bang não for reconhecido, usa o motor de busca fallback
-      const fallbackBang = bangs.find(b => b.t === fallbackEngine);
+      // Se o bang não for reconhecido, usa o Bing como fallback
+      const fallbackBang = findBangByTrigger(fallbackEngine);
       if (fallbackBang) {
-        window.location.replace(fallbackBang.u.replace('{{{s}}}', encodeURIComponent(cleanQuery || bangCode)));
+        window.location.replace(fallbackBang.u.replace('{{{s}}}', encodeURIComponent(query)));
       }
+    }
+
+    // Função para encontrar um bang pelo trigger
+    function findBangByTrigger(trigger) {
+      return bangs.find(b => b.t.includes(trigger));
     }
 
     // Event Listeners
@@ -178,57 +196,20 @@
       searchInput.focus();
     };
 
-    // Alternar visibilidade do menu de opções
-    optionsBtn.onclick = function() {
-      optionsMenu.style.display = optionsMenu.style.display === 'block' ? 'none' : 'block';
-    };
-
-    // Fechar menu de opções ao clicar fora
-    document.addEventListener('click', (event) => {
-      if (!optionsMenu.contains(event.target) && event.target !== optionsBtn) {
-        optionsMenu.style.display = 'none';
-      }
-    });
-
-    // Atualizar motor de busca fallback
-    fallbackSearch.onchange = function() {
-      fallbackEngine = this.value;
-      localStorage.setItem('fallbackSearchEngine', fallbackEngine);
-    };
-
-    // Resetar para configurações padrão
-    resetButton.onclick = function() {
-      localStorage.clear();
-      fallbackSearch.value = 'b';
-      fallbackEngine = 'b';
-      searchInput.value = '';
-      searchInput.focus();
-    };
-
-    // Preview de sugestões
-    const input = document.getElementById('searchInput');
-    const previewBox = document.createElement('div');
-    previewBox.id = 'bangPreview';
-    previewBox.style.position = 'absolute';
-    previewBox.style.top = '100%';
-    previewBox.style.left = '0';
-    previewBox.style.width = '100%';
-    previewBox.style.background = '#333333';
-    previewBox.style.border = '1px solid #ccc';
-    previewBox.style.zIndex = '1000';
-    previewBox.style.display = 'none';
-    previewBox.style.maxHeight = '200px';
-    previewBox.style.overflowY = 'auto';
-    input.parentNode.appendChild(previewBox);
-
     let highlightedIndex = -1;
     let currentMatches = [];
 
-    input.addEventListener('input', function() {
-      const value = input.value.trim();
+    // Atualiza o preview de bangs conforme digitação
+    searchInput.addEventListener('input', function() {
+      const value = searchInput.value.trim();
       if (value.startsWith('!')) {
         const query = value.slice(1).toLowerCase();
-        currentMatches = bangs.filter(b => b.t.startsWith(query));
+        
+        // Encontra todos os bangs que possuem pelo menos um trigger que começa com a query
+        currentMatches = bangs.filter(b => 
+          b.t.some(trigger => trigger.startsWith(query))
+        );
+        
         highlightedIndex = -1; // Reset ao digitar
         if (currentMatches.length > 0) {
           renderPreview();
@@ -241,22 +222,39 @@
       }
     });
 
+    // Renderiza o preview dos bangs
     function renderPreview() {
-      previewBox.innerHTML = currentMatches.map((b, i) =>
-        `<div style="padding: 8px; cursor: pointer; background:${i === highlightedIndex ? '#555' : 'none'}"
-          class="${i === highlightedIndex ? 'highlighted' : ''}"
-          data-index="${i}"
-          onclick="document.getElementById('searchInput').value='!${b.t} ';document.getElementById('bangPreview').style.display='none';">!${b.t} — ${b.d}</div>`
-      ).join('');
+      previewBox.innerHTML = currentMatches.map((b, i) => {
+        // Encontra o trigger que corresponde à pesquisa atual
+        const query = searchInput.value.slice(1).toLowerCase();
+        const matchingTrigger = b.t.find(t => t.startsWith(query)) || b.t[0];
+        
+        // Formata todos os triggers disponíveis, destacando o que corresponde à pesquisa
+        const allTriggers = b.t.map(trigger => {
+          if (trigger === matchingTrigger) {
+            return `<strong>!${trigger}</strong>`;
+          }
+          return `!${trigger}`;
+        }).join(', ');
+        
+        return `<div class="preview-item ${i === highlightedIndex ? 'highlighted' : ''}"
+          data-index="${i}" 
+          data-trigger="${matchingTrigger}"
+          onclick="selectBang(this)">
+          ${allTriggers} <span class="domain-name">— ${b.d}</span>
+        </div>`;
+      }).join('');
     }
 
+    // Função local para selecionar um bang pelo clique (removida pois já definimos globalmente)
+
     // Esconde o preview ao perder o foco
-    input.addEventListener('blur', function() {
+    searchInput.addEventListener('blur', function() {
       setTimeout(() => { previewBox.style.display = 'none'; }, 200);
     });
 
-    // Listener ÚNICO para navegação, seleção e busca
-    input.addEventListener('keydown', function(e) {
+    // Navega pelos bangs usando o teclado
+    searchInput.addEventListener('keydown', function(e) {
       if (previewBox.style.display === 'block' && currentMatches.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -271,15 +269,18 @@
         } else if (e.key === 'Tab' || e.key === 'Enter') {
           if (highlightedIndex >= 0) {
             e.preventDefault();
-            input.value = '!' + currentMatches[highlightedIndex].t + ' ';
+            const selectedTrigger = currentMatches[highlightedIndex].t[0];
+            searchInput.value = '!' + selectedTrigger + ' ';
             previewBox.style.display = 'none';
-            return; // Não ativa a busca!
+            searchInput.focus();
+            return; // Não ativa a busca
           }
         }
       }
-      // Só ativa a busca se o preview não está aberto ou não há sugestão destacada
+      
+      // Ativa a busca se Enter for pressionado
       if (e.key === 'Enter') {
-        handleSearch(input.value.trim());
+        handleSearch(searchInput.value.trim());
       }
     });
 
