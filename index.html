@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>nBangs</title>
+  <title>nBang</title>
   <link rel="search" type="application/opensearchdescription+xml" title="Local Search" href="opensearch.xml">
   <style>
     body {
@@ -92,11 +92,10 @@
       <div>
         <label for="fallbackSearch">Fallback Search Engine:</label>
         <select id="fallbackSearch">
-          <option value="gbr">Google</option>
-          <option value="ddg">DuckDuckGo</option>
+          <option value="g">Google</option>
+          <option value="d">DuckDuckGo</option>
           <option value="b">Bing</option>
           <option value="brave">Brave</option>
-          <option value="y">Yahoo!</option>
         </select>
       </div>
       <button id="resetButton" class="reset-button">Reset to Default</button>
@@ -110,20 +109,20 @@
       { t: "ai", u: "https://www.duckduckgo.com/?q={{{s}}}&ia=chat&bang=true", d: "https://www.duckduckgo.com" },
       { t: "b", u: "https://www.bing.com/search?q={{{s}}}", d: "https://www.bing.com" },
       { t: "brave", u: "https://search.brave.com/search?q={{{s}}}", d: "https://search.brave.com" },
-      { t: "chatgpt", u: "https://chat.openai.com/?q={{{s}}}", d: "https://chat.openai.com" },
       { t: "claude", u: "https://claude.ai/search?q={{{s}}}", d: "https://claude.ai" },
-      { t: "ddg", u: "https://duckduckgo.com/?q={{{s}}}", d: "https://duckduckgo.com" },
+      { t: "d", u: "https://duckduckgo.com/?q={{{s}}}", d: "https://duckduckgo.com" },
       { t: "g", u: "https://www.google.com.br/search?q={{{s}}}", d: "https://www.google.com.br" },
-      { t: "d", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
+      { t: "gd", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
+      { t: "i", u: "https://shopping.inter.co/busca?q={{{s}}}&tab=affiliate", d: "https://shopping.inter.co" },
       { t: "ig", u: "https://www.instagram.com/explore/search/keyword/?q={{{s}}}", d: "https://www.instagram.com" },
       { t: "j", u: "https://icasei.atlassian.net/browse/{{{s}}}", d: "https://home.atlassian.com" },
-      { t: "lucky", u: "https://lucky.surf/{{{s}}}", d: "https://lucky.surf" },
+      { t: "l", u: "https://lucky.surf/{{{s}}}", d: "https://lucky.surf" },
       { t: "m", u: "https://maps.google.com/maps?q={{{s}}}", d: "https://maps.google.com" },
+      { t: "o", u: "https://chat.openai.com/?q={{{s}}}", d: "https://chat.openai.com" },
       { t: "p", u: "https://www.promobit.com.br/busca?q={{{s}}}", d: "https://www.promobit.com.br" },
+      { t: "pp", u: "https://www.perplexity.ai/search?q={{{s}}}", d: "https://www.perplexity.ai" },
       { t: "r", u: "https://www.reddit.com/search?q={{{s}}}", d: "https://www.reddit.com" },
-      { t: "si", u: "https://shopping.inter.co/busca?q={{{s}}}&tab=affiliate", d: "https://shopping.inter.co" },
-      { t: "y", u: "https://search.yahoo.com/search?p={{{s}}}", d: "https://yahoo.com" },
-      { t: "yt", u: "https://www.youtube.com/results?search_query={{{s}}}", d: "https://www.youtube.com" },
+      { t: "y", u: "https://www.youtube.com/results?search_query={{{s}}}", d: "https://www.youtube.com" },
     ];
 
     // Inicialização
@@ -200,8 +199,8 @@
     // Resetar para configurações padrão
     resetButton.onclick = function() {
       localStorage.clear();
-      fallbackSearch.value = 'ddg';
-      fallbackEngine = 'ddg';
+      fallbackSearch.value = 'b';
+      fallbackEngine = 'b';
       searchInput.value = '';
       searchInput.focus();
     };
