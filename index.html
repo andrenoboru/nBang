@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Simple Unduck</title>
+  <title>nBangs</title>
   <link rel="search" type="application/opensearchdescription+xml" title="Local Search" href="opensearch.xml">
   <style>
     body {
@@ -106,21 +106,21 @@
   <script>
     // Definição de bangs
     const bangs = [
-      { t: "abr", u: "https://www.amazon.com.br/s?k={{{s}}}", d: "https://www.amazon.com.br" },
+      { t: "a", u: "https://www.amazon.com.br/s?k={{{s}}}", d: "https://www.amazon.com.br" },
       { t: "ai", u: "https://www.duckduckgo.com/?q={{{s}}}&ia=chat&bang=true", d: "https://www.duckduckgo.com" },
       { t: "b", u: "https://www.bing.com/search?q={{{s}}}", d: "https://www.bing.com" },
       { t: "brave", u: "https://search.brave.com/search?q={{{s}}}", d: "https://search.brave.com" },
       { t: "chatgpt", u: "https://chat.openai.com/?q={{{s}}}", d: "https://chat.openai.com" },
       { t: "claude", u: "https://claude.ai/search?q={{{s}}}", d: "https://claude.ai" },
       { t: "ddg", u: "https://duckduckgo.com/?q={{{s}}}", d: "https://duckduckgo.com" },
-      { t: "gbr", u: "https://www.google.com.br/search?q={{{s}}}", d: "https://www.google.com.br" },
-      { t: "gdrive", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
+      { t: "g", u: "https://www.google.com.br/search?q={{{s}}}", d: "https://www.google.com.br" },
+      { t: "d", u: "https://drive.google.com/drive/search?q={{{s}}}", d: "https://drive.google.com" },
       { t: "ig", u: "https://www.instagram.com/explore/search/keyword/?q={{{s}}}", d: "https://www.instagram.com" },
-      { t: "jira", u: "https://icasei.atlassian.net/browse/{{{s}}}", d: "https://home.atlassian.com" },
+      { t: "j", u: "https://icasei.atlassian.net/browse/{{{s}}}", d: "https://home.atlassian.com" },
       { t: "lucky", u: "https://lucky.surf/{{{s}}}", d: "https://lucky.surf" },
-      { t: "maps", u: "https://maps.google.com/maps?q={{{s}}}", d: "https://maps.google.com" },
-      { t: "promobit", u: "https://www.promobit.com.br/busca?q={{{s}}}", d: "https://www.promobit.com.br" },
-      { t: "reddit", u: "https://www.reddit.com/search?q={{{s}}}", d: "https://www.reddit.com" },
+      { t: "m", u: "https://maps.google.com/maps?q={{{s}}}", d: "https://maps.google.com" },
+      { t: "p", u: "https://www.promobit.com.br/busca?q={{{s}}}", d: "https://www.promobit.com.br" },
+      { t: "r", u: "https://www.reddit.com/search?q={{{s}}}", d: "https://www.reddit.com" },
       { t: "si", u: "https://shopping.inter.co/busca?q={{{s}}}&tab=affiliate", d: "https://shopping.inter.co" },
       { t: "y", u: "https://search.yahoo.com/search?p={{{s}}}", d: "https://yahoo.com" },
       { t: "yt", u: "https://www.youtube.com/results?search_query={{{s}}}", d: "https://www.youtube.com" },
