@@ -36,7 +36,7 @@
       border-radius: 4px;
       background-color: #3a3a45;
       color: #e8e8e8;
-      transition: opacity 0.3s;
+      transition: opacity 0.2s;
     }
     
     .search-button {
@@ -47,9 +47,13 @@
       border-radius: 4px;
       background-color: #4a4a55;
       color: #e8e8e8;
-      transition: all 0.3s;
+      transition: background-color 0.2s;
       position: relative;
       overflow: hidden;
+      min-width: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .search-button:hover:not(.loading) {
@@ -59,6 +63,13 @@
     .search-button.loading {
       background-color: #4a4a55;
       cursor: not-allowed;
+    }
+    
+    .button-text {
+      transition: opacity 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .search-button.loading .button-text {
@@ -77,7 +88,7 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
       opacity: 0;
-      transition: opacity 0.3s;
+      transition: opacity 0.2s ease;
     }
     
     .search-button.loading .loading-spinner {
@@ -97,23 +108,17 @@
       height: 100%;
       background: rgba(42, 42, 53, 0.8);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 2000;
       opacity: 0;
       visibility: hidden;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
     
     .loading-overlay.active {
       opacity: 1;
       visibility: visible;
-    }
-    
-    .loading-content {
-      text-align: center;
-      color: #e8e8e8;
     }
     
     .loading-spinner-large {
@@ -123,13 +128,6 @@
       border-top: 3px solid #e8e8e8;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto 16px;
-    }
-    
-    .loading-text {
-      font-size: 16px;
-      margin-top: 8px;
-      opacity: 0.8;
     }
     
     .bang-preview {
@@ -150,7 +148,7 @@
     .preview-item {
       padding: 8px 12px;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.1s;
       line-height: 1.4;
     }
     
@@ -196,22 +194,11 @@
   </div>
 
   <div id="loadingOverlay" class="loading-overlay">
-    <div class="loading-content">
-      <div class="loading-spinner-large"></div>
-      <div class="loading-text">Searching...</div>
-    </div>
+    <div class="loading-spinner-large"></div>
   </div>
 
   <script>
-    // Função global para selecionar um bang pelo clique
-    function selectBang(element) {
-      const trigger = element.getAttribute('data-trigger');
-      document.getElementById('searchInput').value = '!' + trigger + ' ';
-      document.getElementById('bangPreview').style.display = 'none';
-      document.getElementById('searchInput').focus();
-    }
-    
-    // Definição de bangs com múltiplos triggers
+    // Array de bangs únicos (estrutura original)
     const bangs = [
       { t: ["a", "amazon", "amazonbr"], u: "https://amazon.com.br/s?k={{{s}}}", d: "amazon.com.br" },
       { t: ["ai"], u: "https://duckduckgo.com/?q={{{s}}}&ia=chat&bang=true", d: "duckduckgo.com" },
@@ -233,46 +220,72 @@
       { t: ["y","yt", "youtube"], u: "https://youtube.com/results?search_query={{{s}}}", d: "youtube.com" },
     ];
 
-    // Bing como fallback
-    const fallbackEngine = 'b';
+    // Map para busca rápida O(1) - criado uma vez
+    const bangMap = new Map();
+    bangs.forEach(bang => {
+      bang.t.forEach(trigger => {
+        bangMap.set(trigger, bang);
+      });
+    });
+    
+    const fallbackBang = bangMap.get('b');
     
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const previewBox = document.getElementById('bangPreview');
     const loadingOverlay = document.getElementById('loadingOverlay');
 
-    // Função para mostrar loading
+    let highlightedIndex = -1;
+    let currentMatches = [];
+    let isLoading = false;
+
+    // Debounce para otimizar performance do preview
+    let debounceTimer;
+    function debounce(func, wait) {
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(debounceTimer);
+          func(...args);
+        };
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(later, wait);
+      };
+    }
+
+    // Cache para renderização do preview
+    const previewCache = new Map();
+
     function showLoading() {
+      if (isLoading) return;
+      isLoading = true;
       searchBtn.classList.add('loading');
       searchInput.style.opacity = '0.7';
       loadingOverlay.classList.add('active');
-      
-      // Desabilita input e preview durante loading
       searchInput.disabled = true;
       previewBox.style.display = 'none';
     }
 
-    // Função para esconder loading (caso precise cancelar)
     function hideLoading() {
+      isLoading = false;
       searchBtn.classList.remove('loading');
       searchInput.style.opacity = '1';
       loadingOverlay.classList.remove('active');
       searchInput.disabled = false;
     }
 
-    // Função de busca
     function handleSearch(query) {
-      if (!query) return;
+      if (!query || isLoading) return;
 
-      // Mostra o loading
       showLoading();
 
-      // Pequeno delay para garantir que a animação seja vista
+      // Processamento imediato para URL params (sem delay)
+      const isFromParams = window.location.search.includes('q=');
+      const delay = isFromParams ? 0 : 150;
+
       setTimeout(() => {
         const match = query.match(/!(\S+)/i);
         if (!match) {
-          // Sem bang, usa o Bing como fallback
-          const fallbackBang = findBangByTrigger(fallbackEngine);
+          // Sem bang, usa fallback
           if (fallbackBang) {
             window.location.replace(fallbackBang.u.replace('{{{s}}}', encodeURIComponent(query)));
           }
@@ -282,10 +295,9 @@
         const bangCode = match[1].toLowerCase();
         const cleanQuery = query.replace(/!\S+\s*/i, '').trim();
 
-        // Verificar se o bang existe
-        const selectedBang = findBangByTrigger(bangCode);
+        // Busca O(1) no Map
+        const selectedBang = bangMap.get(bangCode);
         if (selectedBang) {
-          // Se a consulta estiver vazia, redireciona para a homepage
           if (cleanQuery === '') {
             window.location.replace("https://" + selectedBang.d);
           } else {
@@ -294,42 +306,43 @@
           return;
         }
 
-        // Se o bang não for reconhecido, usa o Bing como fallback
-        const fallbackBang = findBangByTrigger(fallbackEngine);
+        // Fallback
         if (fallbackBang) {
           window.location.replace(fallbackBang.u.replace('{{{s}}}', encodeURIComponent(query)));
         }
-      }, 300); // 300ms delay para mostrar a animação
+      }, delay);
     }
 
-    // Função para encontrar um bang pelo trigger
-    function findBangByTrigger(trigger) {
-      return bangs.find(b => b.t.includes(trigger));
+    // Função otimizada para filtrar bangs
+    function filterBangs(query) {
+      const cacheKey = query;
+      if (previewCache.has(cacheKey)) {
+        return previewCache.get(cacheKey);
+      }
+
+      const matches = bangs.filter(b => 
+        b.t.some(trigger => trigger.startsWith(query))
+      );
+
+      // Cache apenas para queries curtas (mais comuns)
+      if (query.length <= 3) {
+        previewCache.set(cacheKey, matches);
+      }
+
+      return matches;
     }
 
-    // Event Listeners
-    window.onload = function() {
-      searchInput.focus();
-    };
-
-    let highlightedIndex = -1;
-    let currentMatches = [];
-
-    // Atualiza o preview de bangs conforme digitação
-    searchInput.addEventListener('input', function() {
-      // Não processa se estiver em loading
-      if (searchBtn.classList.contains('loading')) return;
+    // Preview otimizado com debounce
+    const updatePreview = debounce(function() {
+      if (isLoading) return;
       
       const value = searchInput.value.trim();
       if (value.startsWith('!')) {
         const query = value.slice(1).toLowerCase();
         
-        // Encontra todos os bangs que possuem pelo menos um trigger que começa com a query
-        currentMatches = bangs.filter(b => 
-          b.t.some(trigger => trigger.startsWith(query))
-        );
+        currentMatches = filterBangs(query);
+        highlightedIndex = -1;
         
-        highlightedIndex = -1; // Reset ao digitar
         if (currentMatches.length > 0) {
           renderPreview();
           previewBox.style.display = 'block';
@@ -339,22 +352,16 @@
       } else {
         previewBox.style.display = 'none';
       }
-    });
+    }, 50);
 
-    // Renderiza o preview dos bangs
     function renderPreview() {
+      const query = searchInput.value.slice(1).toLowerCase();
+      
       previewBox.innerHTML = currentMatches.map((b, i) => {
-        // Encontra o trigger que corresponde à pesquisa atual
-        const query = searchInput.value.slice(1).toLowerCase();
         const matchingTrigger = b.t.find(t => t.startsWith(query)) || b.t[0];
-        
-        // Formata todos os triggers disponíveis, destacando o que corresponde à pesquisa
-        const allTriggers = b.t.map(trigger => {
-          if (trigger === matchingTrigger) {
-            return `<strong>!${trigger}</strong>`;
-          }
-          return `!${trigger}`;
-        }).join(', ');
+        const allTriggers = b.t.map(trigger => 
+          trigger === matchingTrigger ? `<strong>!${trigger}</strong>` : `!${trigger}`
+        ).join(', ');
         
         return `<div class="preview-item ${i === highlightedIndex ? 'highlighted' : ''}"
           data-index="${i}" 
@@ -365,15 +372,23 @@
       }).join('');
     }
 
-    // Esconde o preview ao perder o foco
+    // Função global para selecionar bang
+    window.selectBang = function(element) {
+      const trigger = element.getAttribute('data-trigger');
+      searchInput.value = '!' + trigger + ' ';
+      previewBox.style.display = 'none';
+      searchInput.focus();
+    };
+
+    // Event listeners otimizados
+    searchInput.addEventListener('input', updatePreview);
+
     searchInput.addEventListener('blur', function() {
       setTimeout(() => { previewBox.style.display = 'none'; }, 200);
     });
 
-    // Navega pelos bangs usando o teclado
     searchInput.addEventListener('keydown', function(e) {
-      // Não processa teclas se estiver em loading
-      if (searchBtn.classList.contains('loading')) {
+      if (isLoading) {
         e.preventDefault();
         return;
       }
@@ -396,33 +411,37 @@
             searchInput.value = '!' + selectedTrigger + ' ';
             previewBox.style.display = 'none';
             searchInput.focus();
-            return; // Não ativa a busca
+            return;
           }
         }
       }
       
-      // Ativa a busca se Enter for pressionado
       if (e.key === 'Enter') {
         handleSearch(searchInput.value.trim());
       }
     });
 
-    // Clique no botão de busca
     searchBtn.addEventListener('click', () => {
-      if (!searchBtn.classList.contains('loading')) {
+      if (!isLoading) {
         handleSearch(searchInput.value.trim());
       }
     });
 
-    // Lidar com parâmetros de URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const initialQuery = urlParams.get('q');
-    if (initialQuery) {
-      searchInput.value = initialQuery;
-      handleSearch(initialQuery);
-    }
+    // Inicialização otimizada
+    window.addEventListener('load', function() {
+      // Prioriza parâmetros de URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialQuery = urlParams.get('q');
+      
+      if (initialQuery) {
+        searchInput.value = initialQuery;
+        handleSearch(initialQuery);
+      } else {
+        searchInput.focus();
+      }
+    });
 
-    // Previne o comportamento padrão do formulário se houver
+    // Previne comportamento padrão
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && e.target === searchInput) {
         e.preventDefault();
